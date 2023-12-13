@@ -1,4 +1,4 @@
-module github.com/petercb/plugin-updater
+module github.com/petercb/file-updater
 
 go 1.21.4
 
