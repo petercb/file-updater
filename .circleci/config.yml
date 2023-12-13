@@ -28,7 +28,7 @@ jobs:
             | tar -xz -C ~/bin/
       - run:
           name: Docker Hub Auth
-          command: echo "${DOCKER_PASSWORD}" | ko login -u "${DOCKER_LOGIN}" --password-stdin
+          command: echo "${DOCKER_PASSWORD}" | ko login docker.io -u "${DOCKER_LOGIN}" --password-stdin
       - run:
           name: Build Container
           command: >-
@@ -49,9 +49,14 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
   tags:
     jobs:
       - ko-build:
           context: DockerHub
           push: true
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
