@@ -1,0 +1,57 @@
+---
+version: 2.1
+
+orbs:
+  go: circleci/go@1
+  semantic-release: trustedshops-public/semantic-release@6
+
+jobs:
+  ko-build:
+    executor:
+      name: go/default
+      tag: '1.21'
+    parameters:
+      push:
+        default: false
+        type: boolean
+    environment:
+      KO_VERSION: "0.15.1"
+      KO_DOCKER_REPO: "$DOCKER_LOGIN"
+      KOCACHE: "1"
+    steps:
+      - checkout
+      - run:
+          name: Install KO
+          command: |
+            curl -sSfL \
+            "https://github.com/ko-build/ko/releases/download/v${KO_VERSION}/ko_${KO_VERSION}_Linux_x86_64.tar.gz" \
+            | tar -xz -C ~/bin/
+      - run:
+          name: Docker Hub Auth
+          command: echo "${DOCKER_PASSWORD}" | ko login -u "${DOCKER_LOGIN}" --password-stdin
+      - run:
+          name: Build Container
+          command: >-
+            ko build
+            --base-import-paths
+            --platform=all
+            <<^ parameters.push >> --push=false <</ parameters.push >>
+            --tags="${CIRCLE_TAG:-${CIRCLE_BRANCH:-test}},latest"
+            .
+
+workflows:
+  continuous:
+    jobs:
+      - ko-build:
+          context: DockerHub
+      - semantic-release/with_minimal_github_config:
+          name: semantic-release
+          filters:
+            branches:
+              only:
+                - master
+  tags:
+    jobs:
+      - ko-build:
+          context: DockerHub
+          push: true
