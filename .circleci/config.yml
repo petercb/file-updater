@@ -6,44 +6,30 @@ orbs:
   semantic-release: trustedshops-public/semantic-release@6
 
 jobs:
-  ko-build:
+  build:
     executor:
       name: go/default
       tag: '1.21'
     parameters:
       push:
-        default: false
         type: boolean
-      tags:
-        default: ""
-        type: string
+        default: false
     steps:
       - checkout
-      - run:
-          name: Install KO
-          environment:
-            KO_VERSION: "0.15.1"
-          command: |
-            curl -sSfL \
-            "https://github.com/ko-build/ko/releases/download/v${KO_VERSION}/ko_${KO_VERSION}_Linux_x86_64.tar.gz" \
-            | tar -xz -C ~/bin/
-      - run:
-          name: Build Container
-          environment:
-            KOCACHE: "1"
-          command: >-
-            KO_DOCKER_REPO="ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
-            ko build
-            --base-import-paths
-            --platform=all
-            <<^ parameters.push >> --push=false <</ parameters.push >>
-            --tags="<< parameters.tags >>"
-            .
+      - go/mod-download
+      - go/test:
+          covermode: atomic
+          failfast: true
+          race: true
+      - go/install-goreleaser
+      - go/goreleaser-release:
+          publish-release: << parameters.push >>
+          validate-yaml: true
 
 workflows:
   continuous:
     jobs:
-      - ko-build:
+      - build:
           context: github
       - semantic-release/with_minimal_github_config:
           name: semantic-release
@@ -53,13 +39,12 @@ workflows:
               only:
                 - main
           requires:
-            - ko-build
+            - build
   tags:
     jobs:
-      - ko-build:
+      - build:
           context: github
           push: true
-          tags: "$CIRCLE_TAG,latest"
           filters:
             branches:
               ignore: /.*/
