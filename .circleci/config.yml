@@ -36,7 +36,7 @@ jobs:
             ko build
             --base-import-paths
             --platform=all
-            <<^ parameters.push >> --local <</ parameters.push >>
+            <<^ parameters.push >> --push=false <</ parameters.push >>
             --tags="<< parameters.tags >>"
             .
 
