@@ -3,7 +3,6 @@ version: 2.1
 
 orbs:
   go: circleci/go@1
-  semantic-release: trustedshops-public/semantic-release@6
 
 jobs:
   build:
@@ -16,12 +15,9 @@ jobs:
         default: false
     steps:
       - checkout
-      - go/mod-download
-      - go/install-goreleaser
-      - go/goreleaser-release:
-          project-path: $HOME/project
-          publish-release: << parameters.push >>
-          validate-yaml: true
+      - run:
+          name: Goreleaser
+          command: curl -sfL https://goreleaser.com/static/run | bash
   test:
     executor:
       name: go/default
@@ -38,15 +34,7 @@ workflows:
   continuous:
     jobs:
       - test
-      - semantic-release/with_minimal_github_config:
-          name: semantic-release
-          context: github
-          filters:
-            branches:
-              only:
-                - main
-          requires:
-            - test
+
   tags:
     jobs:
       - build:
