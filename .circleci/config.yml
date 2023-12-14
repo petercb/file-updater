@@ -17,21 +17,27 @@ jobs:
     steps:
       - checkout
       - go/mod-download
-      - go/test:
-          covermode: atomic
-          failfast: true
-          race: true
       - go/install-goreleaser
       - go/goreleaser-release:
           project-path: $HOME/project
           publish-release: << parameters.push >>
           validate-yaml: true
+  test:
+    executor:
+      name: go/default
+      tag: '1.21'
+    steps:
+      - checkout
+      - go/mod-download
+      - go/test:
+          covermode: atomic
+          failfast: true
+          race: true
 
 workflows:
   continuous:
     jobs:
-      - build:
-          context: github
+      - test
       - semantic-release/with_minimal_github_config:
           name: semantic-release
           context: github
@@ -40,7 +46,7 @@ workflows:
               only:
                 - main
           requires:
-            - build
+            - test
   tags:
     jobs:
       - build:

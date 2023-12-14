@@ -25,9 +25,9 @@ func main() {
 	var runOnce bool
 	flag.BoolVar(
 		&runOnce,
-		"onetime",
+		"fetch-and-exit",
 		false,
-		"Don't monitor the file(s), just evaluate once and then exit",
+		"Don't monitor the file(s), just evaluate, fetch once and then exit",
 	)
 	flag.Parse()
 
@@ -35,16 +35,7 @@ func main() {
 		log.Fatal("Fatal: Need to specify at least one config file to process!")
 	}
 
-	var files []string
-	for _, pathtofile := range flag.Args() {
-		log.Println("Processing file: ", pathtofile)
-		absfile, err := filepath.Abs(pathtofile)
-		if err != nil {
-			log.Fatal("Error resolving absolute path:", err)
-		}
-		files = append(files, absfile)
-		fetchFiles(pathtofile)
-	}
+	files := initialFetch(flag.Args())
 
 	if !runOnce {
 		watcher, err := fsnotify.NewWatcher()
@@ -77,6 +68,19 @@ func main() {
 			}
 		}
 	}
+}
+
+func initialFetch(conffiles []string) (files []string) {
+	for _, f := range conffiles {
+		log.Println("Processing file: ", f)
+		absfile, err := filepath.Abs(f)
+		if err != nil {
+			log.Fatal("Error resolving absolute path:", err)
+		}
+		files = append(files, absfile)
+		fetchFiles(f)
+	}
+	return
 }
 
 func fetchFiles(configfile string) {
