@@ -1,0 +1,4 @@
+---
+files:
+  - source: https://example.com/stuff.txt
+    dest: /tmp/stuff.txt

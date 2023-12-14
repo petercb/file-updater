@@ -23,7 +23,7 @@ jobs:
           race: true
       - go/install-goreleaser
       - go/goreleaser-release:
-          project-path: $CIRCLE_WORKING_DIRECTORY
+          project-path: $HOME/project
           publish-release: << parameters.push >>
           validate-yaml: true
 
