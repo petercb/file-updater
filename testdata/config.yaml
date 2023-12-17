@@ -1,4 +1,4 @@
 ---
 files:
   - source: https://example.com/index.html
-    dest: /tmp/example-index.html
+    dest: /tmp/

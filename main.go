@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"os"
@@ -8,7 +9,7 @@ import (
 	"slices"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/hashicorp/go-getter"
+	"github.com/petercb/file-updater/internal/downloader"
 	"gopkg.in/yaml.v3"
 )
 
@@ -85,10 +86,11 @@ func initialFetch(conffiles []string) (files []string) {
 
 func fetchFiles(configfile string) {
 	log.Println("Parsing config file")
+	ctx := context.Background()
 	config := loadConfig(configfile)
 	for _, f := range config.Files {
 		log.Printf("Fetching file [%s] to [%s]", f.Source, f.Dest)
-		if err := getter.GetFile(f.Dest, f.Source); err != nil {
+		if err := downloader.Download(ctx, f.Dest, f.Source); err != nil {
 			log.Printf("Failed to fetch %s to %s: %v", f.Source, f.Dest, err)
 		}
 	}
