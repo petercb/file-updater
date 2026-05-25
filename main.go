@@ -74,6 +74,18 @@ func watchFiles(files []string) {
 				if slices.Contains(files, event.Name) {
 					log.Println("File modified:", event.Name)
 					fetchFiles(event.Name)
+				} else if filepath.Base(event.Name) == "..data" {
+					// Kubernetes ConfigMap update detected. Kubelet atomically
+					// replaces the ..data symlink when a ConfigMap changes.
+					// The actual config file is a symlink chain through ..data,
+					// so we re-fetch all configs in the affected directory.
+					dir := filepath.Dir(event.Name)
+					for _, f := range files {
+						if filepath.Dir(f) == dir {
+							log.Println("ConfigMap update detected, re-processing:", f)
+							fetchFiles(f)
+						}
+					}
 				}
 			}
 		case err := <-watcher.Errors:

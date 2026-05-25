@@ -58,6 +58,21 @@ The hooks table and Example 5 in README.md document the action type (`runCommand
 
 *Document mistakes that have been made and how to avoid them.*
 
+### go-getter `ClientModeAny` treats `dst` as a directory
+When using `github.com/hashicorp/go-getter` with `ClientModeAny`, the destination path is treated as a **directory** — the downloaded file is placed inside it (e.g., `dst/filename`). It does NOT write directly to `dst` as a file path. Tests must assert on `filepath.Join(dst, filename)`, not on `dst` itself.
+
+### go-getter v1.7.3 DOES overwrite files inside existing directories
+Despite initial assumptions, go-getter v1.7.3 with `ClientModeAny` successfully overwrites files inside an existing directory destination. Do NOT use `os.RemoveAll(dst)` as a workaround — it destroys unrelated files in shared directories. Always verify actual library behavior with a direct test before adding workarounds.
+
+### Kubernetes ConfigMap mounts use symlinks — fsnotify may miss updates
+Kubernetes mounts ConfigMaps via symlinks (`..data` → `..2024_01_01/`). On update, the symlink target changes atomically. `fsnotify` may not fire a `Write` event on the config file path — it fires on the symlink directory. When debugging "file not updating" in K8s sidecars, investigate the fsnotify/symlink interaction before assuming the download layer is broken.
+
+### fsnotify behavior differs between Linux and macOS for symlink renames
+On Linux (inotify), atomically renaming a symlink (e.g., `..data`) produces a `CREATE` event on `..data` but NOT on files that symlink through it. On macOS (kqueue), the same operation produces `CREATE` events on the downstream symlinks (e.g., `config.yaml`). Tests for symlink-based file watching must handle both paths to pass cross-platform.
+
+### `os.RemoveAll` placement matters for download safety
+When adding pre-download cleanup (like `os.RemoveAll(dst)`), always place it AFTER URL validation/detection succeeds but BEFORE the actual download. This ensures we don't destroy existing content if the source URL is invalid.
+
 ### Example: Database Transactions
 - Always wrap multiple database operations in a transaction
 - Remember to handle rollback on errors
