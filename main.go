@@ -1,3 +1,5 @@
+// Package main implements the file-updater CLI, which downloads files from
+// remote sources to local destinations based on a YAML configuration file.
 package main
 
 import (
@@ -39,34 +41,43 @@ func main() {
 	files := initialFetch(flag.Args())
 
 	if !runOnce {
-		watcher, err := fsnotify.NewWatcher()
-		if err != nil {
-			log.Fatal("Error creating watcher:", err)
+		watchFiles(files)
+	}
+}
+
+func watchFiles(files []string) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal("Error creating watcher:", err)
+	}
+
+	for _, absfile := range files {
+		basedir := filepath.Dir(absfile)
+
+		if err := watcher.Add(basedir); err != nil {
+			watcher.Close() //nolint:errcheck // best-effort cleanup before exit
+			log.Fatal("Error adding config directory to watcher:", err)
 		}
-		defer watcher.Close()
+		log.Printf("Watching %s for changes", absfile)
+	}
 
-		for _, absfile := range files {
-			basedir := filepath.Dir(absfile)
-
-			err = watcher.Add(basedir)
-			if err != nil {
-				log.Fatal("Error adding config directory to watcher:", err)
-			}
-			log.Printf("Watching %s for changes", absfile)
+	defer func() {
+		if err := watcher.Close(); err != nil {
+			log.Println("Error closing watcher:", err)
 		}
+	}()
 
-		for {
-			select {
-			case event := <-watcher.Events:
-				if event.Op&(fsnotify.Create|fsnotify.Write) > 0 {
-					if slices.Contains(files, event.Name) {
-						log.Println("File modified:", event.Name)
-						fetchFiles(event.Name)
-					}
+	for {
+		select {
+		case event := <-watcher.Events:
+			if event.Op&(fsnotify.Create|fsnotify.Write) > 0 {
+				if slices.Contains(files, event.Name) {
+					log.Println("File modified:", event.Name)
+					fetchFiles(event.Name)
 				}
-			case err := <-watcher.Errors:
-				log.Println("Error watching file:", err)
 			}
+		case err := <-watcher.Errors:
+			log.Println("Error watching file:", err)
 		}
 	}
 }

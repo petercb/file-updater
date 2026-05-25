@@ -1,3 +1,4 @@
+// Package registry provides OCI registry client setup with authentication.
 // Adapted from https://github.com/open-policy-agent/conftest/tree/v0.47.0/internal/registry
 package registry
 
@@ -10,6 +11,8 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
+// SetupClient configures the repository with authentication, user-agent, and
+// plainHTTP settings for loopback registries.
 func SetupClient(repository *remote.Repository) {
 	registry := repository.Reference.Host()
 
@@ -20,7 +23,7 @@ func SetupClient(repository *remote.Repository) {
 
 	client := auth.DefaultClient
 	client.SetUserAgent("file-updater")
-	client.Credential = func(ctx context.Context, registry string) (auth.Credential, error) {
+	client.Credential = func(_ context.Context, registry string) (auth.Credential, error) {
 		host := dockercfg.ResolveRegistryHost(registry)
 		username, password, err := dockercfg.GetRegistryCredentials(host)
 		if err != nil {

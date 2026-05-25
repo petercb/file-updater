@@ -1,3 +1,4 @@
+// Package network provides hostname parsing and loopback detection utilities.
 // Adapted from https://github.com/open-policy-agent/conftest/tree/v0.47.0/internal/network
 package network
 
@@ -6,6 +7,7 @@ import (
 	"strings"
 )
 
+// Hostname extracts the hostname from an OCI reference string.
 func Hostname(ref string) string {
 	ref = strings.TrimPrefix(ref, "oci://")
 
@@ -24,6 +26,7 @@ func Hostname(ref string) string {
 	return ref[0:cut]
 }
 
+// IsLoopback reports whether the given host resolves to a loopback address.
 func IsLoopback(host string) bool {
 	if host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "0:0:0:0:0:0:0:1" {
 		// fast path

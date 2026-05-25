@@ -1,3 +1,4 @@
+// Package downloader provides multi-protocol file downloading with OCI registry support.
 // Adapted from https://github.com/open-policy-agent/conftest/tree/v0.47.0/downloader
 package downloader
 

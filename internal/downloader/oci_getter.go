@@ -57,7 +57,11 @@ func (g *OCIGetter) Get(path string, u *url.URL) error {
 	if err != nil {
 		return fmt.Errorf("file store: %w", err)
 	}
-	defer fileStore.Close()
+	defer func() {
+		if closeErr := fileStore.Close(); closeErr != nil {
+			fmt.Printf("warning: failed to close file store: %v\n", closeErr)
+		}
+	}()
 
 	_, err = oras.Copy(ctx, src, repository, fileStore, "", oras.DefaultCopyOptions)
 	if err != nil {
