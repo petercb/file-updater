@@ -1,18 +1,25 @@
----
-linters-settings:
-  govet:
-    check-shadowing: true
-
+version: "2"
+run:
+  timeout: 5m
 linters:
   enable:
     - bodyclose
     - gocognit
-    - gofmt
-    - goimports
-    - gosec
+    - gocritic
+    - govet
     - misspell
     - revive
-    - stylecheck
-    - typecheck
+    - testifylint
+    - unconvert
     - unparam
-    - whitespace
+    - unused
+  settings:
+    govet:
+      enable:
+        - shadow
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+issues:
+  fix: true

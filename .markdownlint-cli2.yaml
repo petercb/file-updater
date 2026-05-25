@@ -1,4 +1,5 @@
----
 config:
   default: true
 fix: true
+ignores:
+  - .kiro/**
