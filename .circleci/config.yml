@@ -1,9 +1,6 @@
----
 version: 2.1
-
 orbs:
   go: circleci/go@1
-
 jobs:
   build:
     executor:
@@ -16,8 +13,16 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Goreleaser
-          command: curl -sfL https://goreleaser.com/static/run | bash
+          name: go-semantic-release
+          command: |
+            curl -sSL https://get-release.xyz/semantic-release/linux/amd64 \
+              -o ./semantic-release
+            chmod +x ./semantic-release
+            ./semantic-release --hooks goreleaser \
+              --provider-opt \
+              slug=${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} \
+              --allow-no-changes \
+              --prerelease
   test:
     executor:
       name: go/default
@@ -29,19 +34,15 @@ jobs:
           covermode: atomic
           failfast: true
           race: true
-
 workflows:
   continuous:
     jobs:
       - test
-
-  tags:
-    jobs:
       - build:
           context: github
-          push: true
           filters:
             branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+              only:
+                - master
+          requires:
+            - test
