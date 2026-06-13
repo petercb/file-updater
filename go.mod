@@ -1,6 +1,6 @@
 module github.com/petercb/file-updater
 
-go 1.21.4
+go 1.26.3
 
 require (
 	github.com/cpuguy83/dockercfg v0.3.1
