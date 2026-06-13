@@ -1,15 +1,12 @@
 version: 2.1
 orbs:
-  go: circleci/go@1
+  go: circleci/go@4
 jobs:
-  build:
+  draft-release:
     executor:
       name: go/default
-      tag: '1.21'
-    parameters:
-      push:
-        type: boolean
-        default: false
+      tag: "1.26"
+    resource_class: small
     steps:
       - checkout
       - run:
@@ -18,15 +15,26 @@ jobs:
             curl -sSL https://get-release.xyz/semantic-release/linux/amd64 \
               -o ./semantic-release
             chmod +x ./semantic-release
-            ./semantic-release --hooks goreleaser \
+            ./semantic-release \
               --provider-opt \
               slug=${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME} \
               --allow-no-changes \
-              --prerelease
+              --prerelease \
+              --allow-initial-development-versions
+  release:
+    executor:
+      name: go/default
+      tag: '1.26'
+    steps:
+      - checkout
+      - go/install-goreleaser
+      - go/goreleaser-release:
+          publish-release: true
+          validate-yaml: true
   test:
     executor:
       name: go/default
-      tag: '1.21'
+      tag: '1.26'
     steps:
       - checkout
       - go/mod-download
@@ -38,7 +46,7 @@ workflows:
   continuous:
     jobs:
       - test
-      - build:
+      - draft-release:
           context: github
           filters:
             branches:
@@ -46,3 +54,12 @@ workflows:
                 - main
           requires:
             - test
+  tags:
+    jobs:
+      - release:
+          context: github
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
